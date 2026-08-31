@@ -1,0 +1,1 @@
+<resources><style name="Theme.Appel" parent="android:Theme.Material.Light.NoActionBar"><item name="android:statusBarColor">@android:color/transparent</item></style></resources>

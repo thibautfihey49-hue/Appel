@@ -1,0 +1,1 @@
+package com.thibaut.appel.ui.theme; import androidx.compose.material3.*; import androidx.compose.runtime.Composable; import androidx.compose.ui.graphics.Color; @Composable fun AppelTheme(c:@Composable ()->Unit){MaterialTheme(colorScheme=darkColorScheme(primary=Color(0xFF7C5CFF),background=Color(0xFF0A0A0E)),content=c)}
