@@ -2,7 +2,9 @@ package com.thibaut.appel.ui
 import androidx.compose.foundation.layout.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.unit.dp
 import com.google.accompanist.permissions.*
 import com.thibaut.appel.ui.screens.*
 @OptIn(ExperimentalPermissionsApi::class)
@@ -11,9 +13,9 @@ import com.thibaut.appel.ui.screens.*
   var tab by remember{mutableStateOf(0)}
   LaunchedEffect(Unit){ if(!perms.allPermissionsGranted) perms.launchMultiplePermissionRequest() }
   if(!perms.allPermissionsGranted){
-    Box(Modifier.fillMaxSize().padding(24.dp), contentAlignment=androidx.compose.ui.Alignment.Center){
-      Column(horizontalAlignment=androidx.compose.ui.Alignment.CenterHorizontally){
-        Text("L'app a besoin des contacts et appels pour fonctionner")
+    Box(Modifier.fillMaxSize().padding(24.dp), contentAlignment=Alignment.Center){
+      Column(horizontalAlignment=Alignment.CenterHorizontally){
+        Text("L'app a besoin des contacts et appels")
         Spacer(Modifier.height(12.dp))
         Button(onClick={perms.launchMultiplePermissionRequest()}){Text("Autoriser")}
       }
