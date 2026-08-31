@@ -2,6 +2,8 @@ package com.thibaut.appel.ui
 import android.app.role.RoleManager
 import android.content.Intent
 import android.os.Build
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -10,16 +12,12 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
-import androidx.lifecycle.Lifecycle
-import androidx.lifecycle.LifecycleEventObserver
-import androidx.lifecycle.compose.LocalLifecycleOwner
 import com.google.accompanist.permissions.*
 import com.thibaut.appel.ui.screens.*
 @OptIn(ExperimentalPermissionsApi::class)
 @Composable fun AppRoot(){
   val ctx=LocalContext.current
   val perms = rememberMultiplePermissionsState(listOf(android.Manifest.permission.READ_CONTACTS, android.Manifest.permission.READ_CALL_LOG, android.Manifest.permission.CALL_PHONE))
-  val lifecycle = LocalLifecycleOwner.current.lifecycle
   var isDefault by remember{mutableStateOf(false)}
   fun checkDefault(): Boolean {
     return try{
@@ -32,50 +30,41 @@ import com.thibaut.appel.ui.screens.*
       }
     }catch(_:Exception){false}
   }
-  // refresh quand tu reviens de l'écran système "Définir par défaut"
-  DisposableEffect(lifecycle){
-    val obs = LifecycleEventObserver{_,e-> if(e==Lifecycle.Event.ON_RESUME) isDefault=checkDefault() }
-    lifecycle.addObserver(obs); onDispose{lifecycle.removeObserver(obs)}
-  }
+  val launcher = rememberLauncherForActivityResult(ActivityResultContracts.StartActivityForResult()){ isDefault=checkDefault() }
   LaunchedEffect(Unit){ isDefault=checkDefault() }
-
   var tab by remember{mutableStateOf(0)}
   val Green = Color(0xFF22C55E)
 
-  // ÉCRAN AUTORISATIONS AVEC BOUTON DÉFAUT INCLUS
   if(!perms.allPermissionsGranted || !isDefault){
     Column(Modifier.fillMaxSize().padding(24.dp), verticalArrangement=Arrangement.Center, horizontalAlignment=Alignment.CenterHorizontally){
       Text("Autorisations requises", style=MaterialTheme.typography.titleLarge, color=Color.Black)
       Spacer(Modifier.height(16.dp))
       if(!perms.allPermissionsGranted){
-        Text("Contacts + Journal d'appels pour afficher tes contacts", color=Color.Black)
+        Text("Contacts + Journal d'appels", color=Color.Black)
         Spacer(Modifier.height(8.dp))
         Button(onClick={perms.launchMultiplePermissionRequest()}, modifier=Modifier.fillMaxWidth(), colors=ButtonDefaults.buttonColors(containerColor=Green, contentColor=Color.Black)){Text("Autoriser contacts", color=Color.Black, fontWeight=androidx.compose.ui.text.font.FontWeight.Bold)}
         Spacer(Modifier.height(16.dp))
       }
       if(!isDefault){
-        Text("Pour voir tout le clavier et remplacer le téléphone système", color=Color.Black)
+        Text("Pour voir tout le clavier et remplacer le téléphone", color=Color.Black)
         Spacer(Modifier.height(8.dp))
         Button(onClick={
           try{
-            if(Build.VERSION.SDK_INT>=29){
+            val intent = if(Build.VERSION.SDK_INT>=29){
               val rm=ctx.getSystemService(RoleManager::class.java)
-              ctx.startActivity(rm.createRequestRoleIntent(RoleManager.ROLE_DIALER))
+              rm.createRequestRoleIntent(RoleManager.ROLE_DIALER)
             } else {
-              val i=Intent(android.telecom.TelecomManager.ACTION_CHANGE_DEFAULT_DIALER); i.putExtra(android.telecom.TelecomManager.EXTRA_CHANGE_DEFAULT_DIALER_PACKAGE_NAME, ctx.packageName); ctx.startActivity(i)
+              Intent(android.telecom.TelecomManager.ACTION_CHANGE_DEFAULT_DIALER).putExtra(android.telecom.TelecomManager.EXTRA_CHANGE_DEFAULT_DIALER_PACKAGE_NAME, ctx.packageName)
             }
+            launcher.launch(intent)
           }catch(_:Exception){}
-        }, modifier=Modifier.fillMaxWidth(), colors=ButtonDefaults.buttonColors(containerColor=Color.Black, contentColor=Color.White)){Text("Définir comme appli d'appel par défaut")}
-      }
-      if(perms.allPermissionsGranted && isDefault){
-        Spacer(Modifier.height(16.dp)); Text("Parfait !", color=Green)
+        }, modifier=Modifier.fillMaxWidth(), colors=ButtonDefaults.buttonColors(containerColor=Color.Black, contentColor=Color.White)){Text("Définir comme appli par défaut")}
       }
     }
     if(!perms.allPermissionsGranted) return
-    // si seulement pas défaut, on laisse quand même accéder via bouton "Continuer"
     if(!isDefault){
-      Spacer(Modifier.height(12.dp))
-      TextButton(onClick={tab=0; isDefault=true}){Text("Continuer sans définir", color=Color.Black)}
+      Spacer(Modifier.height(4.dp))
+      // on laisse continuer mais on a déjà isDefault qui se met à jour au retour
     }
   }
 
